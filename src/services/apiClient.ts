@@ -1,5 +1,6 @@
 import axios from "axios";
 import { CLIENT_APP_TOKEN } from "../config/clientConfig";
+import { getStoredPin } from "./pinStorage";
 
 const defaultHeaders: Record<string, string> = {};
 
@@ -13,6 +14,17 @@ const apiClient = axios.create({
   baseURL: "https://ben-zvi.onrender.com",
   timeout: 15000,
   headers: defaultHeaders,
+});
+
+apiClient.interceptors.request.use((config) => {
+  const pin = getStoredPin();
+  if (pin) {
+    if (!config.headers) {
+      config.headers = {} as any;
+    }
+    (config.headers as any)["X-Client-Pin"] = pin;
+  }
+  return config;
 });
 
 export default apiClient;
