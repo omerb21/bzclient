@@ -8,7 +8,9 @@ body {
   padding: 0;
   height: 100%;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: #f3f4f6;
+  background:
+    radial-gradient(circle at top, rgba(250, 204, 21, 0.16), transparent 55%),
+    linear-gradient(180deg, #020617, #0b1f3b 30%, #020617 100%);
   color: #111827;
 }
 
@@ -20,30 +22,35 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding: 1.5rem 0.75rem;
 }
 
 .app-header {
   background-color: #0b1f3b;
   color: #ffffff;
-  padding: 1rem;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.35);
+  padding: 0.85rem 1.25rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.6);
+  border-radius: 0.75rem 0.75rem 0 0;
 }
 
 .app-header-title {
   font-size: 1.1rem;
   font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.02em;
 }
 
 .app-main {
   flex: 1;
-  padding: 1.25rem;
+  padding: 0;
 }
 
 .app-footer {
-  padding: 0.75rem 1rem;
-  background-color: #e5e7eb;
-  font-size: 0.85rem;
+  padding: 0.65rem 1rem 0;
+  background-color: transparent;
+  font-size: 0.8rem;
   text-align: center;
+  color: #e5e7eb;
 }
 
 .page-container {
@@ -51,8 +58,12 @@ body {
   margin: 0 auto;
   background-color: #ffffff;
   border-radius: 0.5rem;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
-  padding: 1.5rem 1.75rem 1.75rem;
+  box-shadow:
+    0 26px 60px rgba(15, 23, 42, 0.55),
+    0 0 0 1px rgba(15, 23, 42, 0.4);
+  padding: 1.75rem 1.9rem 1.9rem;
+  position: relative;
+  overflow: hidden;
 }
 
 .page-title {
@@ -74,6 +85,8 @@ body {
   align-items: center;
   gap: 0.75rem;
   color: #f9fafb;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(250, 204, 21, 0.35);
 }
 
 .accounts-summary-label {
@@ -106,6 +119,13 @@ body {
     border-color 150ms ease;
 }
 
+.accounts-month-selector button:hover:not(:disabled) {
+  background-color: #0b1f3b;
+  color: #f9fafb;
+  border-color: #0b1f3b;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
+}
+
 .accounts-month-selector button:disabled {
   color: #9ca3af;
   border-color: rgba(148, 163, 184, 0.4);
@@ -133,6 +153,7 @@ body {
   border-radius: 0.5rem;
   background-color: #f9fafb;
   border: 1px solid rgba(148, 163, 184, 0.55);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.1);
 }
 
 .pin-form-label {
@@ -151,6 +172,12 @@ body {
   direction: ltr;
   text-align: center;
   letter-spacing: 0.25em;
+}
+
+.pin-form-input:focus {
+  outline: none;
+  border-color: #0b1f3b;
+  box-shadow: 0 0 0 1px #0b1f3b, 0 0 0 4px rgba(15, 23, 42, 0.18);
 }
 
 .pin-form-error {
@@ -174,6 +201,17 @@ body {
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3);
   transition: background 150ms ease, box-shadow 150ms ease, transform 80ms ease,
     border-color 150ms ease;
+}
+
+.button-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #111827, #0b1f3b);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.45);
+  transform: translateY(-1px);
+}
+
+.button-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.35);
 }
 
 .button-primary:disabled {
@@ -216,6 +254,10 @@ body {
 
 .accounts-table tbody tr:nth-child(even) {
   background-color: #f9fafb;
+}
+
+.accounts-table tbody tr:hover {
+  background-color: #eff6ff;
 }
 
 .accounts-month-row {
