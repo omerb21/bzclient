@@ -207,6 +207,14 @@ function ClientAccessAdminPage() {
           קוד גישה חדש (6 ספרות)
         </label>
         <input
+          type="text"
+          name="username"
+          autoComplete="username"
+          className="admin-form-input-hidden"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+        <input
           id="manual-pin-input"
           type="password"
           autoComplete="new-password"
