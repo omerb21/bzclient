@@ -8,8 +8,8 @@ body {
   padding: 0;
   height: 100%;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: #f5f5f5;
-  color: #222222;
+  background-color: #f3f4f6;
+  color: #111827;
 }
 
 #root {
@@ -23,9 +23,10 @@ body {
 }
 
 .app-header {
-  background-color: #1e293b;
+  background-color: #0b1f3b;
   color: #ffffff;
   padding: 1rem;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.35);
 }
 
 .app-header-title {
@@ -35,7 +36,7 @@ body {
 
 .app-main {
   flex: 1;
-  padding: 1rem;
+  padding: 1.25rem;
 }
 
 .app-footer {
@@ -50,35 +51,40 @@ body {
   margin: 0 auto;
   background-color: #ffffff;
   border-radius: 0.5rem;
-  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08);
-  padding: 1.25rem;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  padding: 1.5rem 1.75rem 1.75rem;
 }
 
 .page-title {
   margin: 0 0 1rem 0;
-  font-size: 1.3rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #0b1f3b;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding-bottom: 0.75rem;
 }
 
 .accounts-summary {
-  margin: 0.5rem 0 1rem 0;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  background-color: #f1f5f9;
+  margin: 0.75rem 0 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  background: radial-gradient(circle at top left, #fbbf24 0, #facc15 12%, #0b1f3b 55%, #020617 100%);
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 0.75rem;
+  color: #f9fafb;
 }
 
 .accounts-summary-label {
   font-size: 0.95rem;
-  color: #4b5563;
+  color: #e5e7eb;
 }
 
 .accounts-summary-value {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #111827;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #facc15;
 }
 
 .accounts-month-selector {
@@ -90,20 +96,26 @@ body {
 }
 
 .accounts-month-selector button {
-  border: none;
-  background: transparent;
-  color: #1d4ed8;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  background-color: #ffffff;
+  color: #0b1f3b;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease,
+    border-color 150ms ease;
 }
 
 .accounts-month-selector button:disabled {
   color: #9ca3af;
+  border-color: rgba(148, 163, 184, 0.4);
+  background-color: #f9fafb;
   cursor: default;
 }
 
 .accounts-month-current {
   font-weight: 600;
+  color: #0b1f3b;
 }
 
 .page-message {
@@ -120,6 +132,7 @@ body {
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   background-color: #f9fafb;
+  border: 1px solid rgba(148, 163, 184, 0.55);
 }
 
 .pin-form-label {
@@ -151,13 +164,16 @@ body {
 }
 
 .button-primary {
-  border: none;
-  background-color: #1d4ed8;
-  color: #ffffff;
-  padding: 0.4rem 0.9rem;
-  border-radius: 0.375rem;
+  border: 1px solid #0b1f3b;
+  background: linear-gradient(135deg, #0b1f3b, #1e293b);
+  color: #f9fafb;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
   font-size: 0.9rem;
   cursor: pointer;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3);
+  transition: background 150ms ease, box-shadow 150ms ease, transform 80ms ease,
+    border-color 150ms ease;
 }
 
 .button-primary:disabled {
@@ -178,7 +194,7 @@ body {
 }
 
 .accounts-table thead {
-  background-color: #f1f5f9;
+  background-color: #0b1f3b;
 }
 
 .accounts-table th,
@@ -186,6 +202,11 @@ body {
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
+}
+
+.accounts-table th {
+  color: #f9fafb;
+  font-weight: 500;
 }
 
 .accounts-table th:last-child,
@@ -203,10 +224,12 @@ body {
 
 .accounts-month-label {
   font-weight: 600;
+  color: #0b1f3b;
 }
 
 .accounts-month-total {
   font-weight: 600;
+  color: #0f172a;
 }
 
 .chart-container {
@@ -216,6 +239,7 @@ body {
 .chart-title {
   margin: 0 0 0.75rem 0;
   font-size: 1.1rem;
+  color: #0b1f3b;
 }
 
 .chart-body {
@@ -308,18 +332,18 @@ body {
 .history-chart-svg {
   width: 100%;
   height: 160px;
-  background-color: #f9fafb;
+  background: linear-gradient(135deg, #0b1f3b, #020617);
   border-radius: 0.5rem;
 }
 
 .history-chart-line {
   fill: none;
-  stroke: #1d4ed8;
+  stroke: #facc15;
   stroke-width: 1.5;
 }
 
 .history-chart-point {
-  fill: #1d4ed8;
+  fill: #facc15;
 }
 
 .history-chart-labels {
@@ -344,7 +368,7 @@ body {
 
 .history-chart-label-value {
   font-weight: 600;
-  color: #111827;
+  color: #0b1f3b;
 }
 
 @media (max-width: 640px) {
