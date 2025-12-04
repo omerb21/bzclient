@@ -150,12 +150,12 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
                   </td>
                 </tr>
                 {sortedSnapshots.map((snapshot) => (
-                  <tr key={`${monthKey}-${snapshot.id}`}>
-                    <td>{formatDate(snapshot.snapshotDate)}</td>
-                    <td>{snapshot.fundType || ""}</td>
-                    <td>{snapshot.fundName || ""}</td>
-                    <td>{snapshot.fundNumber || ""}</td>
-                    <td>{formatCurrency(snapshot.amount)}</td>
+                  <tr key={`${monthKey}-${snapshot.id}`} className="accounts-row">
+                    <td data-label="תאריך">{formatDate(snapshot.snapshotDate)}</td>
+                    <td data-label="סוג קופה">{snapshot.fundType || ""}</td>
+                    <td data-label="שם קופה">{snapshot.fundName || ""}</td>
+                    <td data-label="מספר קופה">{snapshot.fundNumber || ""}</td>
+                    <td data-label="סכום">{formatCurrency(snapshot.amount)}</td>
                   </tr>
                 ))}
               </>

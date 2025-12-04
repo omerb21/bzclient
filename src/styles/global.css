@@ -734,6 +734,49 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .accounts-table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .accounts-table thead {
+    display: none;
+  }
+
+  .accounts-table tbody {
+    display: block;
+  }
+
+  .accounts-row {
+    display: block;
+    margin: 0.5rem 0;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+  }
+
+  .accounts-row td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.85rem;
+  }
+
+  .accounts-row td:last-child {
+    border-bottom: none;
+  }
+
+  .accounts-row td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    color: #4b5563;
+    margin-left: 0.5rem;
+  }
+
   .accounts-table th,
   .accounts-table td {
     padding: 0.4rem 0.5rem;
