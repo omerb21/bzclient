@@ -209,6 +209,7 @@ function ClientAccessAdminPage() {
         <input
           id="manual-pin-input"
           type="password"
+          autoComplete="new-password"
           inputMode="numeric"
           pattern="[0-9]*"
           maxLength={6}
