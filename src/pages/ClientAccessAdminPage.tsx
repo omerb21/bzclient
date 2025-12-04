@@ -4,6 +4,7 @@ import {
   resetClientCredentials,
   updateClientToken,
   updateClientPin,
+  disableClientAccess,
 } from "../services/adminClientAccess";
 
 function ClientAccessAdminPage() {
@@ -121,6 +122,31 @@ function ClientAccessAdminPage() {
     }
   };
 
+  const handleDisableAccess = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setStatusMessage(null);
+    setErrorMessage(null);
+
+    const clientId = parseClientId();
+    if (!clientId) {
+      setErrorMessage("יש להזין מספר לקוח תקין.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await disableClientAccess(clientId);
+      setLastClientId(clientId);
+      setGeneratedToken(null);
+      setGeneratedPin(null);
+      setStatusMessage("הגישה של הלקוח לאפליקציית הלקוח בוטלה (token ו-PIN נוקו).");
+    } catch (error) {
+      setErrorMessage("אירעה שגיאה בעת ביטול הגישה ללקוח.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const currentClientUrl =
     lastClientId && generatedToken
       ? `https://bzclient.onrender.com/?token=${generatedToken}`
@@ -192,6 +218,17 @@ function ClientAccessAdminPage() {
         />
         <button type="submit" className="button-secondary" disabled={loading}>
           עדכן קוד גישה
+        </button>
+      </form>
+
+      <form className="admin-form" onSubmit={handleDisableAccess}>
+        <h2 className="admin-form-title">ביטול גישה ללקוח</h2>
+        <p className="page-subtitle">
+          פעולה זו מנקה את הטוקן וה-PIN של הלקוח, כך שלא תהיה לו יותר גישה לאפליקציית
+          הלקוח עד שייווצרו עבורו פרטי גישה חדשים.
+        </p>
+        <button type="submit" className="button-secondary" disabled={loading}>
+          בטל גישה ללקוח
         </button>
       </form>
 

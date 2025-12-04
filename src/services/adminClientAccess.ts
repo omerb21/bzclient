@@ -38,3 +38,7 @@ export async function updateClientPin(
   const payload: ClientPinUpdatePayload = { clientPin };
   await apiClient.post(`/api/v1/admin/clients/${clientId}/pin`, payload);
 }
+
+export async function disableClientAccess(clientId: number): Promise<void> {
+  await apiClient.post(`/api/v1/admin/clients/${clientId}/access/disable`);
+}
