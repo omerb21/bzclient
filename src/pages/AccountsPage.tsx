@@ -9,6 +9,7 @@ import { getStoredPin, setStoredPin, clearStoredPin } from "../services/pinStora
 import AccountsTable from "../components/AccountsTable";
 import AccountsSummary from "../components/AccountsSummary";
 import MonthlyHistoryChart from "../components/MonthlyHistoryChart";
+import { formatCurrency, formatDate } from "../utils/formatters";
 
 function AccountsPage() {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
@@ -19,8 +20,63 @@ function AccountsPage() {
   const [pin, setPin] = useState<string>(() => getStoredPin() || "");
   const [hasValidPin, setHasValidPin] = useState<boolean>(() => !!getStoredPin());
   const [pinError, setPinError] = useState<string | null>(null);
+  const [fundTypeFilter, setFundTypeFilter] = useState<string>("all");
+  const [searchText, setSearchText] = useState<string>("");
+  const [minAmountFilter, setMinAmountFilter] = useState<string>("");
 
   const hasClientToken = hasClientTokenConfigured();
+
+  const summaryTrendText = useMemo(() => {
+    if (!selectedMonthKey || historyPoints.length < 2) {
+      return null;
+    }
+
+    const monthToAmount: Record<string, number> = {};
+    historyPoints.forEach((point) => {
+      const value =
+        typeof point.amount === "number" && Number.isFinite(point.amount)
+          ? point.amount
+          : 0;
+      monthToAmount[point.month] = value;
+    });
+
+    const historyMonthKeys = Object.keys(monthToAmount).sort();
+    const currentIndex = historyMonthKeys.indexOf(selectedMonthKey);
+
+    if (currentIndex <= 0) {
+      return null;
+    }
+
+    const currentAmount = monthToAmount[historyMonthKeys[currentIndex]] ?? 0;
+    const prevAmount = monthToAmount[historyMonthKeys[currentIndex - 1]] ?? 0;
+
+    if (!Number.isFinite(currentAmount) || !Number.isFinite(prevAmount)) {
+      return null;
+    }
+
+    const diff = currentAmount - prevAmount;
+
+    if (diff === 0) {
+      return "ללא שינוי ביחס לחודש הקודם.";
+    }
+
+    if (prevAmount <= 0) {
+      return null;
+    }
+
+    const percent = Math.abs((diff / prevAmount) * 100);
+    const roundedPercent = Math.round(percent * 10) / 10;
+
+    if (!Number.isFinite(roundedPercent) || roundedPercent === 0) {
+      return null;
+    }
+
+    if (diff > 0) {
+      return `עלייה של ${roundedPercent}% ביחס לחודש הקודם.`;
+    }
+
+    return `ירידה של ${roundedPercent}% ביחס לחודש הקודם.`;
+  }, [historyPoints, selectedMonthKey]);
 
   useEffect(() => {
     async function load() {
@@ -106,13 +162,67 @@ function AccountsPage() {
     });
   }, [snapshots, selectedMonthKey]);
 
-  const totalAmount = filteredSnapshots.reduce((sum, snapshot) => {
+  const fundTypes = useMemo(() => {
+    const types = new Set<string>();
+    snapshots.forEach((snapshot) => {
+      const type = snapshot.fundType || "";
+      if (type.trim()) {
+        types.add(type);
+      }
+    });
+    return Array.from(types).sort();
+  }, [snapshots]);
+
+  const visibleSnapshots = useMemo(() => {
+    let result = filteredSnapshots;
+
+    if (fundTypeFilter !== "all") {
+      const target = fundTypeFilter.toLowerCase();
+      result = result.filter((snapshot) =>
+        (snapshot.fundType || "").toLowerCase() === target
+      );
+    }
+
+    const trimmedSearch = searchText.trim();
+    if (trimmedSearch) {
+      const query = trimmedSearch.toLowerCase();
+      result = result.filter((snapshot) => {
+        const name = (snapshot.fundName || "").toLowerCase();
+        const number = (snapshot.fundNumber || "").toLowerCase();
+        const code = (snapshot.fundCode || "").toLowerCase();
+        return (
+          name.includes(query) || number.includes(query) || code.includes(query)
+        );
+      });
+    }
+
+    const trimmedMin = minAmountFilter.trim();
+    if (trimmedMin) {
+      const min = Number(trimmedMin.replace(/,/g, ""));
+      if (!Number.isNaN(min) && min > 0) {
+        result = result.filter((snapshot) => {
+          const value =
+            typeof snapshot.amount === "number" && !Number.isNaN(snapshot.amount)
+              ? snapshot.amount
+              : 0;
+          return value >= min;
+        });
+      }
+    }
+
+    return result;
+  }, [filteredSnapshots, fundTypeFilter, searchText, minAmountFilter]);
+
+  const totalAmount = visibleSnapshots.reduce((sum, snapshot) => {
     const value =
       typeof snapshot.amount === "number" && !Number.isNaN(snapshot.amount)
         ? snapshot.amount
         : 0;
     return sum + value;
   }, 0);
+
+  const fundCount = visibleSnapshots.length;
+  const averageAmount = fundCount > 0 ? totalAmount / fundCount : 0;
 
   const currentMonthIndex = selectedMonthKey
     ? monthKeys.indexOf(selectedMonthKey)
@@ -167,12 +277,75 @@ function AccountsPage() {
     }
   };
 
+  const handleExportVisible = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!visibleSnapshots.length) {
+      return;
+    }
+
+    const rows: string[][] = [];
+    rows.push(["תאריך", "סוג קופה", "שם קופה", "מספר קופה", "סכום"]);
+
+    visibleSnapshots.forEach((snapshot) => {
+      rows.push([
+        formatDate(snapshot.snapshotDate),
+        snapshot.fundType || "",
+        snapshot.fundName || "",
+        snapshot.fundNumber || "",
+        formatCurrency(snapshot.amount),
+      ]);
+    });
+
+    const csv = rows
+      .map((row) =>
+        row
+          .map((cell) => {
+            const safe = cell.replace(/"/g, '""');
+            return `"${safe}"`;
+          })
+          .join(",")
+      )
+      .join("\r\n");
+
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+
+    const monthPart = selectedMonthKey ? `-${selectedMonthKey}` : "";
+    link.download = `funds${monthPart}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="page-container">
       <h1 className="page-title">נתוני קופות</h1>
-      {loading && <p className="page-message">טוען נתונים...</p>}
+      <p className="page-subtitle">
+        סקירה מרוכזת של כל הקופות כפי שהן מופיעות במערכת BEN-ZVI.
+      </p>
+      {loading && !error && (
+        <p className="page-message">טוען נתונים...</p>
+      )}
       {error && !loading && (
         <p className="page-message page-message-error">{error}</p>
+      )}
+      {loading && !error && hasClientToken && hasValidPin && (
+        <div className="page-loading">
+          <div className="skeleton skeleton-summary" />
+          <div className="skeleton skeleton-table-row" />
+          <div className="skeleton skeleton-table-row" />
+          <div className="skeleton skeleton-chart" />
+        </div>
       )}
       {!loading && !error && hasClientToken && !hasValidPin && (
         <form className="pin-form" onSubmit={handlePinSubmit}>
@@ -221,8 +394,69 @@ function AccountsPage() {
               </button>
             </div>
           )}
-          <AccountsSummary totalAmount={totalAmount} />
-          <AccountsTable snapshots={filteredSnapshots} />
+          <div className="accounts-filters">
+            <div className="filter-group">
+              <label className="filter-label" htmlFor="fund-type-filter">
+                סוג קופה
+              </label>
+              <select
+                id="fund-type-filter"
+                className="filter-select"
+                value={fundTypeFilter}
+                onChange={(event) => setFundTypeFilter(event.target.value)}
+              >
+                <option value="all">כל הסוגים</option>
+                {fundTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label className="filter-label" htmlFor="search-filter">
+                חיפוש לפי שם / מספר
+              </label>
+              <input
+                id="search-filter"
+                className="filter-input"
+                type="text"
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                placeholder="לדוגמה: שם קופה או מספר"
+              />
+            </div>
+            <div className="filter-group">
+              <label className="filter-label" htmlFor="min-amount-filter">
+                סכום מינימלי
+              </label>
+              <input
+                id="min-amount-filter"
+                className="filter-input"
+                type="number"
+                min={0}
+                value={minAmountFilter}
+                onChange={(event) => setMinAmountFilter(event.target.value)}
+              />
+            </div>
+            <div className="filters-actions">
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={handleExportVisible}
+                disabled={!visibleSnapshots.length}
+              >
+                יצוא ל-CSV
+              </button>
+            </div>
+          </div>
+          <AccountsSummary
+            totalAmount={totalAmount}
+            fundCount={fundCount}
+            averageAmount={averageAmount}
+            trendText={summaryTrendText}
+          />
+          <AccountsTable snapshots={visibleSnapshots} />
           <MonthlyHistoryChart points={historyPoints} />
         </>
       )}
