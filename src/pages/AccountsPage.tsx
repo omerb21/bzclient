@@ -6,23 +6,38 @@ import { Snapshot } from "../models/snapshot";
 import { HistoryPoint } from "../models/historyPoint";
 import { hasClientTokenConfigured } from "../config/clientConfig";
 import { getStoredPin, setStoredPin, clearStoredPin } from "../services/pinStorage";
+import { getAccountsPreferences, setAccountsPreferences } from "../services/accountsPreferences";
 import AccountsTable from "../components/AccountsTable";
 import AccountsSummary from "../components/AccountsSummary";
 import MonthlyHistoryChart from "../components/MonthlyHistoryChart";
-import { formatCurrency, formatDate } from "../utils/formatters";
+import { formatCurrency, formatDate, formatMonthLabel } from "../utils/formatters";
 
 function AccountsPage() {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [historyPoints, setHistoryPoints] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(null);
+  const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(() => {
+    const prefs = getAccountsPreferences();
+    return prefs?.selectedMonthKey ?? null;
+  });
   const [pin, setPin] = useState<string>(() => getStoredPin() || "");
   const [hasValidPin, setHasValidPin] = useState<boolean>(() => !!getStoredPin());
   const [pinError, setPinError] = useState<string | null>(null);
-  const [fundTypeFilter, setFundTypeFilter] = useState<string>("all");
-  const [searchText, setSearchText] = useState<string>("");
-  const [minAmountFilter, setMinAmountFilter] = useState<string>("");
+  const [showPin, setShowPin] = useState<boolean>(false);
+  const [rememberPin, setRememberPin] = useState<boolean>(() => !!getStoredPin());
+  const [fundTypeFilter, setFundTypeFilter] = useState<string>(() => {
+    const prefs = getAccountsPreferences();
+    return prefs?.fundTypeFilter ?? "all";
+  });
+  const [searchText, setSearchText] = useState<string>(() => {
+    const prefs = getAccountsPreferences();
+    return prefs?.searchText ?? "";
+  });
+  const [minAmountFilter, setMinAmountFilter] = useState<string>(() => {
+    const prefs = getAccountsPreferences();
+    return prefs?.minAmountFilter ?? "";
+  });
 
   const hasClientToken = hasClientTokenConfigured();
 
@@ -213,6 +228,15 @@ function AccountsPage() {
     return result;
   }, [filteredSnapshots, fundTypeFilter, searchText, minAmountFilter]);
 
+  useEffect(() => {
+    setAccountsPreferences({
+      selectedMonthKey,
+      fundTypeFilter,
+      searchText,
+      minAmountFilter,
+    });
+  }, [selectedMonthKey, fundTypeFilter, searchText, minAmountFilter]);
+
   const totalAmount = visibleSnapshots.reduce((sum, snapshot) => {
     const value =
       typeof snapshot.amount === "number" && !Number.isNaN(snapshot.amount)
@@ -224,11 +248,72 @@ function AccountsPage() {
   const fundCount = visibleSnapshots.length;
   const averageAmount = fundCount > 0 ? totalAmount / fundCount : 0;
 
+  const lastUpdatedDate = useMemo(() => {
+    if (!visibleSnapshots.length) {
+      return null;
+    }
+
+    let latest: string | null = null;
+    visibleSnapshots.forEach((snapshot) => {
+      const raw = snapshot.snapshotDate || "";
+      if (!raw) {
+        return;
+      }
+      if (!latest || raw > latest) {
+        latest = raw;
+      }
+    });
+
+    return latest;
+  }, [visibleSnapshots]);
+
   const currentMonthIndex = selectedMonthKey
     ? monthKeys.indexOf(selectedMonthKey)
     : -1;
   const canGoPrevMonth = currentMonthIndex >= 0 && currentMonthIndex < monthKeys.length - 1;
   const canGoNextMonth = currentMonthIndex > 0;
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+
+    if (fundTypeFilter !== "all") {
+      count += 1;
+    }
+
+    if (searchText.trim()) {
+      count += 1;
+    }
+
+    const trimmedMin = minAmountFilter.trim();
+    if (trimmedMin) {
+      const min = Number(trimmedMin.replace(/,/g, ""));
+      if (!Number.isNaN(min) && min > 0) {
+        count += 1;
+      }
+    }
+
+    return count;
+  }, [fundTypeFilter, searchText, minAmountFilter]);
+
+  const summaryTrendKind = useMemo(() => {
+    if (!summaryTrendText) {
+      return null;
+    }
+
+    if (summaryTrendText.startsWith("עלייה")) {
+      return "up" as const;
+    }
+
+    if (summaryTrendText.startsWith("ירידה")) {
+      return "down" as const;
+    }
+
+    if (summaryTrendText.startsWith("ללא שינוי")) {
+      return "flat" as const;
+    }
+
+    return null;
+  }, [summaryTrendText]);
 
   const handlePinChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPin(event.target.value);
@@ -251,7 +336,11 @@ function AccountsPage() {
       return;
     }
 
-    setStoredPin(value);
+    if (rememberPin) {
+      setStoredPin(value);
+    } else {
+      clearStoredPin();
+    }
     setHasValidPin(true);
     setPinError(null);
     setError(null);
@@ -265,6 +354,12 @@ function AccountsPage() {
     if (nextKey) {
       setSelectedMonthKey(nextKey);
     }
+  };
+
+  const handleResetFilters = () => {
+    setFundTypeFilter("all");
+    setSearchText("");
+    setMinAmountFilter("");
   };
 
   const handleNextMonth = () => {
@@ -352,18 +447,37 @@ function AccountsPage() {
           <label className="pin-form-label" htmlFor="pin-input">
             הקלד קוד גישה (6 ספרות)
           </label>
-          <input
-            id="pin-input"
-            type="password"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
-            className="pin-form-input"
-            value={pin}
-            onChange={handlePinChange}
-            autoComplete="one-time-code"
-          />
+          <div className="pin-form-input-row">
+            <input
+              id="pin-input"
+              type={showPin ? "text" : "password"}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              className="pin-form-input"
+              value={pin}
+              onChange={handlePinChange}
+              autoComplete="one-time-code"
+            />
+            <button
+              type="button"
+              className="pin-form-toggle"
+              onClick={() => setShowPin((prev) => !prev)}
+            >
+              {showPin ? "הסתר" : "הצג"}
+            </button>
+          </div>
           {pinError && <p className="pin-form-error">{pinError}</p>}
+          <div className="pin-form-remember">
+            <label className="pin-form-remember-label">
+              <input
+                type="checkbox"
+                checked={rememberPin}
+                onChange={(event) => setRememberPin(event.target.checked)}
+              />
+              <span>זכור אותי במחשב זה</span>
+            </label>
+          </div>
           <div className="pin-form-actions">
             <button type="submit" className="button-primary">
               אישור
@@ -377,6 +491,7 @@ function AccountsPage() {
             <div className="accounts-month-selector">
               <button
                 type="button"
+                className="accounts-month-button button-with-icon button-with-icon-prev"
                 onClick={handlePrevMonth}
                 disabled={!canGoPrevMonth}
               >
@@ -387,6 +502,7 @@ function AccountsPage() {
               </span>
               <button
                 type="button"
+                className="accounts-month-button button-with-icon button-with-icon-next"
                 onClick={handleNextMonth}
                 disabled={!canGoNextMonth}
               >
@@ -395,6 +511,24 @@ function AccountsPage() {
             </div>
           )}
           <div className="accounts-filters">
+            <div className="accounts-filters-header">
+              <div className="filters-title">
+                פילטרים
+                {activeFiltersCount > 0 && (
+                  <span className="filters-title-count">
+                    {` (${activeFiltersCount} פעילים)`}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                className="button-secondary button-reset-filters"
+                onClick={handleResetFilters}
+                disabled={activeFiltersCount === 0}
+              >
+                ניקוי פילטרים
+              </button>
+            </div>
             <div className="filter-group">
               <label className="filter-label" htmlFor="fund-type-filter">
                 סוג קופה
@@ -442,7 +576,7 @@ function AccountsPage() {
             <div className="filters-actions">
               <button
                 type="button"
-                className="button-secondary"
+                className="button-secondary button-with-icon button-with-icon-export"
                 onClick={handleExportVisible}
                 disabled={!visibleSnapshots.length}
               >
@@ -450,11 +584,20 @@ function AccountsPage() {
               </button>
             </div>
           </div>
+          <div className="accounts-status">
+            <span className="accounts-status-text">
+              מציג {fundCount} קופות
+              {selectedMonthKey ? ` לחודש ${formatMonthLabel(selectedMonthKey)}` : ""}
+              {activeFiltersCount > 0 ? " לאחר סינון" : ""}
+            </span>
+          </div>
           <AccountsSummary
             totalAmount={totalAmount}
             fundCount={fundCount}
             averageAmount={averageAmount}
             trendText={summaryTrendText}
+            trendKind={summaryTrendKind}
+            lastUpdatedDate={lastUpdatedDate}
           />
           <AccountsTable snapshots={visibleSnapshots} />
           <MonthlyHistoryChart points={historyPoints} />

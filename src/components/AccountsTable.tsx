@@ -60,6 +60,10 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
           ייתכן שהנתונים עדיין בתהליך עדכון במערכת BEN-ZVI, או שאין כרגע נתונים זמינים
           עבור קופות ללקוח זה.
         </div>
+        <div className="empty-state-text">
+          אפשר גם לנסות להקטין או לנקות את הפילטרים מעל הטבלה (סוג קופה, חיפוש, סכום
+          מינימלי).
+        </div>
       </div>
     );
   }
@@ -70,7 +74,9 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
         <thead>
           <tr>
             <th
-              className="sortable-header"
+              className={`sortable-header${
+                sortField === "date" ? " sortable-header-active" : ""
+              }`}
               onClick={() => handleSort("date")}
             >
               תאריך
@@ -80,7 +86,9 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
             <th>שם קופה</th>
             <th>מספר קופה</th>
             <th
-              className="sortable-header sortable-header-right"
+              className={`sortable-header sortable-header-right${
+                sortField === "amount" ? " sortable-header-active" : ""
+              }`}
               onClick={() => handleSort("amount")}
             >
               סכום
