@@ -40,5 +40,6 @@ export async function updateClientPin(
 }
 
 export async function disableClientAccess(clientId: number): Promise<void> {
-  await apiClient.post(`/api/v1/admin/clients/${clientId}/access/disable`);
+  await updateClientToken(clientId, "");
+  await updateClientPin(clientId, null);
 }
