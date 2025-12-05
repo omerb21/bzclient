@@ -9,16 +9,27 @@ interface AccountsTableProps {
 type SortField = "date" | "amount" | null;
 type SortDirection = "asc" | "desc";
 
+interface CanonicalFund {
+  fundCode: string;
+  canonicalName: string;
+  totalAmount: number;
+  fundType: string;
+  fundNumber: string;
+  snapshotDate: string;
+  allNames: { name: string; amount: number }[];
+  snapshotIds: number[];
+}
+
 function AccountsTable({ snapshots }: AccountsTableProps) {
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [expandedSnapshotIds, setExpandedSnapshotIds] = useState<number[]>([]);
+  const [expandedFundCodes, setExpandedFundCodes] = useState<string[]>([]);
 
-  const toggleSnapshotExpansion = (snapshotId: number) => {
-    setExpandedSnapshotIds((current) =>
-      current.includes(snapshotId)
-        ? current.filter((id) => id !== snapshotId)
-        : [...current, snapshotId]
+  const toggleFundCodeExpansion = (fundCode: string) => {
+    setExpandedFundCodes((current) =>
+      current.includes(fundCode)
+        ? current.filter((code) => code !== fundCode)
+        : [...current, fundCode]
     );
   };
 
@@ -42,6 +53,63 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
 
     return { groupsByMonth: groups, monthKeys: keys };
   }, [snapshots]);
+
+  const canonicalizeFunds = (monthSnapshots: Snapshot[]): CanonicalFund[] => {
+    const byFundCode: Record<string, Snapshot[]> = {};
+
+    monthSnapshots.forEach((snapshot) => {
+      const code = snapshot.fundCode || "unknown";
+      if (!byFundCode[code]) {
+        byFundCode[code] = [];
+      }
+      byFundCode[code].push(snapshot);
+    });
+
+    const canonicalFunds: CanonicalFund[] = [];
+
+    Object.entries(byFundCode).forEach(([fundCode, fundSnapshots]) => {
+      const totalAmount = fundSnapshots.reduce((sum, s) => {
+        const val = typeof s.amount === "number" && !Number.isNaN(s.amount) ? s.amount : 0;
+        return sum + val;
+      }, 0);
+
+      const sortedByAmount = [...fundSnapshots].sort((a, b) => {
+        const aAmt = typeof a.amount === "number" && !Number.isNaN(a.amount) ? a.amount : 0;
+        const bAmt = typeof b.amount === "number" && !Number.isNaN(b.amount) ? b.amount : 0;
+        return bAmt - aAmt;
+      });
+
+      const topSnapshot = sortedByAmount[0];
+      const canonicalName = topSnapshot?.fundName || "";
+
+      const nameAmountMap: Record<string, number> = {};
+      fundSnapshots.forEach((s) => {
+        const name = s.fundName || "";
+        const amt = typeof s.amount === "number" && !Number.isNaN(s.amount) ? s.amount : 0;
+        if (!nameAmountMap[name]) {
+          nameAmountMap[name] = 0;
+        }
+        nameAmountMap[name] += amt;
+      });
+
+      const allNames = Object.entries(nameAmountMap)
+        .map(([name, amount]) => ({ name, amount }))
+        .sort((a, b) => b.amount - a.amount);
+
+      canonicalFunds.push({
+        fundCode,
+        canonicalName,
+        totalAmount,
+        fundType: topSnapshot?.fundType || "",
+        fundNumber: topSnapshot?.fundNumber || "",
+        snapshotDate: topSnapshot?.snapshotDate || "",
+        allNames,
+        snapshotIds: fundSnapshots.map((s) => s.id),
+      });
+    });
+
+    return canonicalFunds;
+  };
 
   const handleSort = (field: SortField) => {
     if (!field) {
@@ -98,18 +166,14 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
         <tbody>
           {monthKeys.map((monthKey) => {
             const monthSnapshots = groupsByMonth[monthKey];
-            const monthTotal = monthSnapshots.reduce((sum, snapshot) => {
-              const value =
-                typeof snapshot.amount === "number" && !Number.isNaN(snapshot.amount)
-                  ? snapshot.amount
-                  : 0;
-              return sum + value;
-            }, 0);
+            const canonicalFunds = canonicalizeFunds(monthSnapshots);
 
-            const sortedSnapshots = [...monthSnapshots];
+            const monthTotal = canonicalFunds.reduce((sum, fund) => sum + fund.totalAmount, 0);
+
+            const sortedFunds = [...canonicalFunds];
 
             if (sortField === "date") {
-              sortedSnapshots.sort((a, b) => {
+              sortedFunds.sort((a, b) => {
                 const aDate = a.snapshotDate || "";
                 const bDate = b.snapshotDate || "";
                 if (aDate === bDate) {
@@ -119,16 +183,8 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
                 return sortDirection === "asc" ? comparison : -comparison;
               });
             } else if (sortField === "amount") {
-              sortedSnapshots.sort((a, b) => {
-                const aAmount =
-                  typeof a.amount === "number" && !Number.isNaN(a.amount)
-                    ? a.amount
-                    : 0;
-                const bAmount =
-                  typeof b.amount === "number" && !Number.isNaN(b.amount)
-                    ? b.amount
-                    : 0;
-                const diff = aAmount - bAmount;
+              sortedFunds.sort((a, b) => {
+                const diff = a.totalAmount - b.totalAmount;
                 if (diff === 0) {
                   return 0;
                 }
@@ -148,9 +204,10 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
                     {formatCurrency(monthTotal)}
                   </td>
                 </tr>
-                {sortedSnapshots.map((snapshot) => {
-                  const isExpanded = expandedSnapshotIds.includes(snapshot.id);
-                  const rowKey = `${monthKey}-${snapshot.id}`;
+                {sortedFunds.map((fund) => {
+                  const rowKey = `${monthKey}-${fund.fundCode}`;
+                  const isExpanded = expandedFundCodes.includes(fund.fundCode);
+                  const hasMultipleNames = fund.allNames.length > 1;
 
                   return (
                     <>
@@ -159,21 +216,26 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
                         className={`accounts-row accounts-row-collapsible${
                           isExpanded ? " accounts-row-expanded" : ""
                         }`}
-                        onClick={() => toggleSnapshotExpansion(snapshot.id)}
+                        onClick={() => toggleFundCodeExpansion(fund.fundCode)}
                       >
                         <td
                           className="accounts-cell-main"
                           data-label="שם קופה"
                         >
                           <div className="accounts-cell-title">
-                            {snapshot.fundName || ""}
+                            {fund.canonicalName}
+                            {hasMultipleNames && (
+                              <span className="accounts-cell-badge">
+                                +{fund.allNames.length - 1}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td
                           className="accounts-cell-amount"
                           data-label="סכום"
                         >
-                          {formatCurrency(snapshot.amount)}
+                          {formatCurrency(fund.totalAmount)}
                         </td>
                         <td
                           className="accounts-cell-expand"
@@ -192,28 +254,47 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
                               <div className="account-details-item">
                                 <span className="account-details-label">תאריך:</span>
                                 <span className="account-details-value">
-                                  {formatDate(snapshot.snapshotDate)}
+                                  {formatDate(fund.snapshotDate)}
                                 </span>
                               </div>
                               <div className="account-details-item">
                                 <span className="account-details-label">סוג קופה:</span>
                                 <span className="account-details-value">
-                                  {snapshot.fundType || ""}
+                                  {fund.fundType}
                                 </span>
                               </div>
                               <div className="account-details-item">
                                 <span className="account-details-label">מספר קופה:</span>
                                 <span className="account-details-value">
-                                  {snapshot.fundNumber || ""}
+                                  {fund.fundNumber}
                                 </span>
                               </div>
                               <div className="account-details-item">
                                 <span className="account-details-label">קוד קופה:</span>
                                 <span className="account-details-value">
-                                  {snapshot.fundCode || ""}
+                                  {fund.fundCode}
                                 </span>
                               </div>
                             </div>
+                            {hasMultipleNames && (
+                              <div className="account-names-list">
+                                <div className="account-names-title">
+                                  כל שמות הקופות לקוד זה:
+                                </div>
+                                <ul className="account-names-items">
+                                  {fund.allNames.map((nameEntry, idx) => (
+                                    <li key={idx} className="account-names-item">
+                                      <span className="account-names-name">
+                                        {nameEntry.name || "(ללא שם)"}
+                                      </span>
+                                      <span className="account-names-amount">
+                                        {formatCurrency(nameEntry.amount)}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       )}
