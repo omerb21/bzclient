@@ -12,6 +12,15 @@ type SortDirection = "asc" | "desc";
 function AccountsTable({ snapshots }: AccountsTableProps) {
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [expandedSnapshotIds, setExpandedSnapshotIds] = useState<number[]>([]);
+
+  const toggleSnapshotExpansion = (snapshotId: number) => {
+    setExpandedSnapshotIds((current) =>
+      current.includes(snapshotId)
+        ? current.filter((id) => id !== snapshotId)
+        : [...current, snapshotId]
+    );
+  };
 
   const hasSnapshots = snapshots.length > 0;
 
@@ -73,18 +82,7 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
       <table className="accounts-table">
         <thead>
           <tr>
-            <th
-              className={`sortable-header${
-                sortField === "date" ? " sortable-header-active" : ""
-              }`}
-              onClick={() => handleSort("date")}
-            >
-              תאריך
-              {sortField === "date" && (sortDirection === "asc" ? " ↑" : " ↓")}
-            </th>
-            <th>סוג קופה</th>
             <th>שם קופה</th>
-            <th>מספר קופה</th>
             <th
               className={`sortable-header sortable-header-right${
                 sortField === "amount" ? " sortable-header-active" : ""
@@ -94,6 +92,7 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
               סכום
               {sortField === "amount" && (sortDirection === "asc" ? " ↑" : " ↓")}
             </th>
+            <th className="accounts-table-expand-header" />
           </tr>
         </thead>
         <tbody>
@@ -140,7 +139,7 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
             return (
               <>
                 <tr key={`month-${monthKey}`} className="accounts-month-row">
-                  <td className="accounts-month-label" colSpan={4}>
+                  <td className="accounts-month-label" colSpan={2}>
                     {monthKey === "unknown"
                       ? "ללא חודש"
                       : formatMonthLabel(monthKey)}
@@ -149,15 +148,78 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
                     {formatCurrency(monthTotal)}
                   </td>
                 </tr>
-                {sortedSnapshots.map((snapshot) => (
-                  <tr key={`${monthKey}-${snapshot.id}`} className="accounts-row">
-                    <td data-label="תאריך">{formatDate(snapshot.snapshotDate)}</td>
-                    <td data-label="סוג קופה">{snapshot.fundType || ""}</td>
-                    <td data-label="שם קופה">{snapshot.fundName || ""}</td>
-                    <td data-label="מספר קופה">{snapshot.fundNumber || ""}</td>
-                    <td data-label="סכום">{formatCurrency(snapshot.amount)}</td>
-                  </tr>
-                ))}
+                {sortedSnapshots.map((snapshot) => {
+                  const isExpanded = expandedSnapshotIds.includes(snapshot.id);
+                  const rowKey = `${monthKey}-${snapshot.id}`;
+
+                  return (
+                    <>
+                      <tr
+                        key={rowKey}
+                        className={`accounts-row accounts-row-collapsible${
+                          isExpanded ? " accounts-row-expanded" : ""
+                        }`}
+                        onClick={() => toggleSnapshotExpansion(snapshot.id)}
+                      >
+                        <td
+                          className="accounts-cell-main"
+                          data-label="שם קופה"
+                        >
+                          <div className="accounts-cell-title">
+                            {snapshot.fundName || ""}
+                          </div>
+                        </td>
+                        <td
+                          className="accounts-cell-amount"
+                          data-label="סכום"
+                        >
+                          {formatCurrency(snapshot.amount)}
+                        </td>
+                        <td
+                          className="accounts-cell-expand"
+                          data-label="פרטים"
+                        >
+                          {isExpanded ? "פחות פרטים" : "עוד פרטים"}
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr
+                          key={`${rowKey}-details`}
+                          className="accounts-row-details"
+                        >
+                          <td colSpan={3}>
+                            <div className="account-details">
+                              <div className="account-details-item">
+                                <span className="account-details-label">תאריך:</span>
+                                <span className="account-details-value">
+                                  {formatDate(snapshot.snapshotDate)}
+                                </span>
+                              </div>
+                              <div className="account-details-item">
+                                <span className="account-details-label">סוג קופה:</span>
+                                <span className="account-details-value">
+                                  {snapshot.fundType || ""}
+                                </span>
+                              </div>
+                              <div className="account-details-item">
+                                <span className="account-details-label">מספר קופה:</span>
+                                <span className="account-details-value">
+                                  {snapshot.fundNumber || ""}
+                                </span>
+                              </div>
+                              <div className="account-details-item">
+                                <span className="account-details-label">קוד קופה:</span>
+                                <span className="account-details-value">
+                                  {snapshot.fundCode || ""}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  );
+                })}
               </>
             );
           })}

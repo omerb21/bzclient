@@ -460,6 +460,64 @@ body {
   background-color: #eff6ff;
 }
 
+.accounts-row-collapsible {
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.accounts-row-expanded {
+  background-color: #eef2ff;
+}
+
+.accounts-table-expand-header {
+  width: 90px;
+}
+
+.accounts-cell-main {
+  font-weight: 500;
+}
+
+.accounts-cell-title {
+  display: block;
+}
+
+.accounts-cell-amount {
+  text-align: right;
+  font-weight: 600;
+}
+
+.accounts-cell-expand {
+  font-size: 0.85rem;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.accounts-row-details td {
+  padding: 0.75rem 0.75rem 0.9rem;
+  background-color: #f9fafb;
+}
+
+.account-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.35rem 1.25rem;
+  font-size: 0.85rem;
+}
+
+.account-details-item {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.account-details-label {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.account-details-value {
+  color: #111827;
+}
+
 .empty-state {
   margin-top: 1rem;
   padding: 1rem 1.25rem;
