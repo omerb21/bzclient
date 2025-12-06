@@ -97,38 +97,38 @@ body {
 
 .accounts-summary-label {
   font-size: 0.95rem;
-  color: #e5e7eb;
+  color: #111827;
 }
 
 .accounts-summary-value {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #facc15;
+  color: #111827;
 }
 
 .accounts-summary-trend {
   margin-top: 0.25rem;
   font-size: 0.85rem;
-  color: #e5e7eb;
+  color: #111827;
 }
 
 .accounts-summary-trend-up {
-  color: #bbf7d0;
+  color: #166534;
 }
 
 .accounts-summary-trend-down {
-  color: #fecaca;
+  color: #b91c1c;
 }
 
 .accounts-summary-trend-flat {
-  color: #e5e7eb;
+  color: #111827;
   opacity: 0.95;
 }
 
 .accounts-summary-updated {
   margin-top: 0.15rem;
   font-size: 0.75rem;
-  color: #d1d5db;
+  color: #4b5563;
 }
 
 .accounts-summary-metrics {
