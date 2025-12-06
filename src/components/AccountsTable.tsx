@@ -11,6 +11,7 @@ type SortDirection = "asc" | "desc";
 
 interface CanonicalFund {
   fundCode: string;
+  displayFundCode: string;
   canonicalName: string;
   totalAmount: number;
   fundType: string;
@@ -57,12 +58,21 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
   const canonicalizeFunds = (monthSnapshots: Snapshot[]): CanonicalFund[] => {
     const byFundCode: Record<string, Snapshot[]> = {};
 
-    monthSnapshots.forEach((snapshot) => {
-      const code = snapshot.fundCode || "unknown";
-      if (!byFundCode[code]) {
-        byFundCode[code] = [];
+    const extractCoreFundCode = (fullCode: string): string => {
+      const match = fullCode.match(/\((\d+)\)/);
+      if (match) {
+        return match[1];
       }
-      byFundCode[code].push(snapshot);
+      return fullCode.trim() || "unknown";
+    };
+
+    monthSnapshots.forEach((snapshot) => {
+      const rawCode = snapshot.fundCode || "unknown";
+      const coreCode = extractCoreFundCode(rawCode);
+      if (!byFundCode[coreCode]) {
+        byFundCode[coreCode] = [];
+      }
+      byFundCode[coreCode].push(snapshot);
     });
 
     const canonicalFunds: CanonicalFund[] = [];
@@ -98,6 +108,7 @@ function AccountsTable({ snapshots }: AccountsTableProps) {
 
       canonicalFunds.push({
         fundCode,
+        displayFundCode: topSnapshot?.fundCode || "",
         canonicalName,
         totalAmount,
         fundType: topSnapshot?.fundType || "",
