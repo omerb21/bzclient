@@ -833,9 +833,32 @@ body {
     padding: 0.75rem;
   }
 
+  /* On mobile, use a darker summary background and light text for better contrast */
   .accounts-summary {
     flex-direction: column;
     align-items: flex-start;
+    background: linear-gradient(135deg, #020617, #0b1f3b);
+    border-color: rgba(15, 23, 42, 0.6);
+    color: #f9fafb;
+  }
+
+  .accounts-summary-label,
+  .accounts-summary-value,
+  .accounts-summary-trend,
+  .accounts-summary-updated {
+    color: #f9fafb;
+  }
+
+  .accounts-summary-trend-up {
+    color: #bbf7d0;
+  }
+
+  .accounts-summary-trend-down {
+    color: #fecaca;
+  }
+
+  .accounts-summary-trend-flat {
+    color: #e5e7eb;
   }
 
   .accounts-summary-metrics {
