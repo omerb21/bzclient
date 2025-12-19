@@ -1,0 +1,17 @@
+:{$PORT}
+
+root * /app/dist
+file_server
+
+# Handle SPA routing (redirect all non-file requests to index.html)
+try_files {path} /index.html
+
+# Compression
+encode gzip
+
+# Standard cache headers for static assets
+@static {
+    file
+    path *.ico *.css *.js *.gif *.jpg *.jpeg *.png *.svg *.woff *.woff2
+}
+header @static Cache-Control "public, max-age=31536000, immutable"
