@@ -117,10 +117,20 @@ function AccountsPage() {
           fetchClientSnapshots(),
           fetchClientHistory(),
         ]);
-        console.log("[ClientApp] CRM data loaded", {
-          snapshotsCount: snapshotsData.length,
-          historyPointsCount: historyData.length,
+
+        console.log("[ClientApp] CRM data received", {
+          isSnapshotsArray: Array.isArray(snapshotsData),
+          isHistoryArray: Array.isArray(historyData),
+          snapshotsData,
+          historyData
         });
+
+        if (!Array.isArray(snapshotsData) || !Array.isArray(historyData)) {
+          console.error("[ClientApp] Invalid data format - expected arrays", { snapshotsData, historyData });
+          setError("נתוני המערכת התקבלו בפורמט לא תקין. פנה למנהל המערכת.");
+          return;
+        }
+
         setSnapshots(snapshotsData);
         setHistoryPoints(historyData);
       } catch (err) {
