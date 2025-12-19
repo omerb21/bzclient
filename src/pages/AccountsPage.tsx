@@ -118,15 +118,18 @@ function AccountsPage() {
           fetchClientHistory(),
         ]);
 
-        console.log("[ClientApp] CRM data received", {
+        console.log("[ClientApp] CRM data received check", {
           isSnapshotsArray: Array.isArray(snapshotsData),
           isHistoryArray: Array.isArray(historyData),
-          snapshotsData,
-          historyData
         });
+        console.log("[ClientApp] Snapshots data stringified:", JSON.stringify(snapshotsData));
+        console.log("[ClientApp] History data stringified:", JSON.stringify(historyData));
 
         if (!Array.isArray(snapshotsData) || !Array.isArray(historyData)) {
-          console.error("[ClientApp] Invalid data format - expected arrays", { snapshotsData, historyData });
+          console.error("[ClientApp] Invalid data format - expected arrays", {
+            snapshotsType: typeof snapshotsData,
+            historyType: typeof historyData
+          });
           setError("נתוני המערכת התקבלו בפורמט לא תקין. פנה למנהל המערכת.");
           return;
         }
